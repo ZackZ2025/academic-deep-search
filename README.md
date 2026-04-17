@@ -1,6 +1,6 @@
 # Academic Deep Search
 
-`academic-deep-search` is an OpenClaw skill for literature review tasks where the goal is not just to find papers, but to extract structured, source-grounded answers that are immediately useful.
+`academic-deep-search` is an AI agent skill for literature review tasks where the goal is not just to find papers, but to extract structured, source-grounded answers that are immediately useful.
 
 It is designed for requests such as:
 
