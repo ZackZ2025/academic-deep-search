@@ -4,6 +4,7 @@ description: |
   Search academic literature and return structured, source-grounded results for questions about methods, markers, findings, or representative figures.
 
   Use this skill when the user wants to know what studies in a field usually detect, what results sections commonly report, which methods are typical, or what a representative figure in a topic looks like. For biomedical topics, prefer PubMed and PMC.
+version: 0.2.0
 ---
 
 # Academic Deep Search
@@ -131,6 +132,17 @@ Then synthesize across papers instead of writing a paper-by-paper summary unless
 
 Use [references/query-guide.md](./references/query-guide.md) for output templates.
 
+## Verification Checklist
+
+Before finalizing:
+
+- [ ] User-specified source scope was honored and not silently broadened.
+- [ ] Query terms and database/source names can be reported if asked.
+- [ ] At least the relevant Methods/Results/captions were inspected when full text was available.
+- [ ] Source metadata was verified before claiming journal/database membership.
+- [ ] Synthesis is organized by finding/method/figure type, not just paper-by-paper dumping.
+- [ ] Evidence limits are stated when only abstracts, sparse hits, or indirect models were available.
+
 ## Non-Negotiable Rules
 
 - User-specified source scope overrides your defaults.
@@ -147,3 +159,16 @@ When little is found:
 - try synonyms or controlled vocabulary
 - explain what was searched and why the yield was limited
 - suggest the next best search strategy
+
+## PubMed Journal-Scoped Full-Text Download Pattern
+
+Use this only for small journal-scoped lookups or a few PDFs while answering a literature question. If the user asks to build/import a reference library, create README/RIS/metadata, download many PDFs, or classify papers into relevance folders, switch to the dedicated `pubmed-journal-reference-import` skill.
+
+Keep this pattern keyword-agnostic: use the user’s current topic terms, but do not bake those terms into the reusable workflow.
+
+1. Treat the journal scope as binding. Query PubMed with the exact `[jour]` filter plus topic terms; do not silently include adjacent titles such as `(N Y)` variants.
+2. Verify each candidate from PubMed XML before saving: `MedlineJournalInfo/MedlineTA`, `Journal/ISOAbbreviation`, title, PMID, DOI, PMCID, year, and article type. Exclude corrections unless the user explicitly wants them.
+3. Prefer recent + free full text by combining date limits and `free full text[sb]`, but consider older highly relevant free full-text papers separately and label them as supplemental rather than pretending they satisfy the recency preference.
+4. For PMC PDFs, do not rely only on `/articles/{PMCID}/pdf/`; PMC may return an HTML “Preparing to download ...” proof-of-work page. Instead, fetch the PMC article page, parse the main `pdf/*.pdf` href, request it, and if a POW interstitial appears, parse `POW_CHALLENGE`, `POW_DIFFICULTY`, and `POW_COOKIE_NAME`, compute a SHA-256 nonce whose hex digest starts with the required zero prefix, set the cookie as `{cookie_name}={challenge},{nonce}`, then retry the PDF URL.
+5. Verify saved PDFs by checking file magic `%PDF` and non-trivial file size. Keep search/download metadata in an artifact directory and write a concise README index plus RIS/BibTeX when useful.
+6. Preserve active manuscript/source directories: save downloaded references under the requested reference directory, and put scripts, logs, JSON/CSV metadata, and failed-download traces under an artifact/archive directory.
